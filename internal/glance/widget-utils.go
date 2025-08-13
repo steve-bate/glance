@@ -10,6 +10,7 @@ import (
 	"io"
 	"math/rand/v2"
 	"net/http"
+	"os"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -21,7 +22,19 @@ var (
 	errPartialContent = errors.New("failed to retrieve some of the content")
 )
 
-const defaultClientTimeout = 5 * time.Second
+var defaultClientTimeout = func() time.Duration {
+	   if v := getenv("GLANCE_TIMEOUT"); v != "" {
+			   if d, err := time.ParseDuration(v); err == nil {
+					   fmt.Printf("[glance] Overriding default timeout: GLANCE_TIMEOUT=%s\n", v)
+					   return d
+			   }
+	   }
+	   return 5 * time.Second
+}()
+
+func getenv(key string) string {
+	return os.Getenv(key)
+}
 
 var defaultHTTPClient = &http.Client{
 	Transport: &http.Transport{
